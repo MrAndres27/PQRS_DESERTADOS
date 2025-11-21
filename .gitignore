@@ -1,0 +1,13 @@
+# Archivos y directorios de entornos de Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos específicos de Alembic que a veces son temporales
+# (Si quieres ignorar las migraciones generadas en 'alembic/versions/', puedes ser más específico)
+alembic/
+
+# Archivos específicos del backend
+pqrs_backend/__pycache__/
+pqrs_backend/venv/
