@@ -86,6 +86,7 @@ class PQRS(Base):
     history = relationship("PQRSHistory", back_populates="pqrs", cascade="all, delete-orphan")
     files = relationship("FileAttachment", back_populates="pqrs", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="pqrs", cascade="all, delete-orphan")
+    comments = relationship("PQRSComment", back_populates="pqrs", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<PQRS(id={self.id}, radicado='{self.radicado_number}', type='{self.type}')>"
