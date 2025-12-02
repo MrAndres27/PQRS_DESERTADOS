@@ -110,5 +110,15 @@ try:
 except ImportError as e:
     print(f"⚠️ No se pudo cargar roles_permissions router: {e}")
 
+
+
+# Health check
+try:
+    from app.routers.health import router as health_router
+    api_router.include_router(health_router, prefix="")
+    print("✅ Health router cargado")
+except ImportError as e:
+    print(f"⚠️ No se pudo cargar health router: {e}")
+
 # Lista de routers disponibles
 __all__ = ["api_router"]

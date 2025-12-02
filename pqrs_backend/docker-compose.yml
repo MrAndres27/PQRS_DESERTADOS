@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pqrs_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pqrs_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pqrs_password_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-pqrs_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "8001:5432"
+    networks:
+      - pqrs_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pqrs_user -d pqrs_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pqrs_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-pqrs_user}:${POSTGRES_PASSWORD:-pqrs_password_2024}@postgres:5432/${POSTGRES_DB:-pqrs_db}
+      DATABASE_URL_SYNC: postgresql://${POSTGRES_USER:-pqrs_user}:${POSTGRES_PASSWORD:-pqrs_password_2024}@postgres:5432/${POSTGRES_DB:-pqrs_db}
+      SECRET_KEY: ${SECRET_KEY:-cambiar-esta-clave-en-produccion}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+# Email (valores por defecto - no enviarán correos reales)
+      MAIL_USERNAME: ${MAIL_USERNAME:-noreply@pqrs.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-changeme}
+      MAIL_FROM: ${MAIL_FROM:-noreply@pqrs.com}
+      MAIL_SERVER: ${MAIL_SERVER:-smtp.gmail.com}
+      DEBUG: ${DEBUG:-true}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:4200}
+    volumes:
+      - ./app:/app/app
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    ports:
+      - "4200:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pqrs_network
+    command: >
+      sh -c "
+        echo '⏳ Esperando PostgreSQL...' &&
+        sleep 5 &&
+        echo '🔄 Ejecutando migraciones...' &&
+        alembic upgrade head &&
+        echo '🚀 Iniciando servidor...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  pqrs_network:
+    driver: bridge

@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     # CONFIGURACIÓN DE BASE DE DATOS (PostgreSQL)
     # =========================================================================
     
-    DATABASE_URL: str
+    DATABASE_URL: str = ""
     """
     URL de conexión asíncrona a PostgreSQL.
     Formato: postgresql+asyncpg://usuario:contraseña@host:puerto/basedatos
@@ -213,6 +213,14 @@ class Settings(BaseSettings):
     
     EXPORTS_DIR: str = "exports"
     """Directorio donde se guardan reportes exportados"""
+
+
+    @property
+    def get_sync_database_url(self) -> str:
+        if self.DATABASE_URL_SYNC:
+            return self.DATABASE_URL_SYNC
+        # Construir desde DATABASE_URL si no existe
+        return self.DATABASE_URL.replace("+asyncpg", "").replace("postgresql+asyncpg", "postgresql")
     
     @property
     def max_file_size_bytes(self) -> int:
